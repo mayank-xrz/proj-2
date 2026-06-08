@@ -1,7 +1,7 @@
 """Service layer for appointment booking and management."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,7 +46,7 @@ async def update_appointment(
         return None
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(appt, field, value)
-    appt.updated_at = datetime.utcnow()
+    appt.updated_at = datetime.now(timezone.utc)
     await db.flush()
     return appt
 

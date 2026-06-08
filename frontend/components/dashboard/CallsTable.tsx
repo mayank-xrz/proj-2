@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { formatDistanceToNow, format } from "date-fns";
+import { memo, useState, useCallback } from "react";
+import { formatDistanceToNow, format, isValid } from "date-fns";
 import type { CallLog, CallOutcome } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -12,7 +12,10 @@ interface CallsTableProps {
   calls: CallLog[];
 }
 
-const outcomeConfig: Record<CallOutcome, { label: string; variant: "success" | "info" | "warning" | "danger" | "muted" }> = {
+const outcomeConfig: Record<
+  CallOutcome,
+  { label: string; variant: "success" | "info" | "warning" | "danger" | "muted" }
+> = {
   appointment_booked: { label: "Booked", variant: "success" },
   faq_answered: { label: "FAQ", variant: "info" },
   transferred: { label: "Transferred", variant: "warning" },
@@ -21,12 +24,24 @@ const outcomeConfig: Record<CallOutcome, { label: string; variant: "success" | "
   unknown: { label: "Unknown", variant: "muted" },
 };
 
+function formatDuration(seconds: number | null): string {
+  if (seconds === null || seconds === undefined) return "—";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}m ${secs}s`;
+}
+
+function safeDate(iso: string): Date | null {
+  const d = new Date(iso);
+  return isValid(d) ? d : null;
+}
+
 function CallRow({ call }: { call: CallLog }) {
   const [expanded, setExpanded] = useState(false);
+  const toggle = useCallback(() => setExpanded((e) => !e), []);
+
   const outcome = outcomeConfig[call.outcome] ?? outcomeConfig.unknown;
-  const duration = call.duration_seconds
-    ? `${Math.floor(call.duration_seconds / 60)}m ${Math.floor(call.duration_seconds % 60)}s`
-    : "—";
+  const startedAt = safeDate(call.started_at);
 
   return (
     <>
@@ -35,7 +50,17 @@ function CallRow({ call }: { call: CallLog }) {
           "border-b border-gray-100 transition-colors hover:bg-gray-50/60 cursor-pointer",
           expanded && "bg-gray-50/60"
         )}
-        onClick={() => setExpanded((e) => !e)}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggle();
+          }
+        }}
+        tabIndex={0}
+        role="button"
+        aria-expanded={expanded}
+        aria-label={`Call from ${call.caller_name ?? call.caller_number} — click to ${expanded ? "collapse" : "expand"}`}
       >
         <td className="py-3 px-4">
           <div className="flex items-center gap-2.5">
@@ -44,6 +69,7 @@ function CallRow({ call }: { call: CallLog }) {
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
                 call.status === "completed" ? "bg-emerald-50" : "bg-gray-100"
               )}
+              aria-hidden="true"
             >
               {call.status === "missed" ? (
                 <PhoneOff className="h-4 w-4 text-red-500" />
@@ -52,7 +78,9 @@ function CallRow({ call }: { call: CallLog }) {
               )}
             </div>
             <div className="min-w-0">
-              <p className="font-medium text-gray-900 text-sm">{call.caller_name ?? "Unknown Caller"}</p>
+              <p className="font-medium text-gray-900 text-sm">
+                {call.caller_name ?? "Unknown Caller"}
+              </p>
               <p className="text-xs text-gray-500">{call.caller_number}</p>
             </div>
           </div>
@@ -60,11 +88,13 @@ function CallRow({ call }: { call: CallLog }) {
         <td className="py-3 px-4 hidden sm:table-cell">
           <Badge variant={outcome.variant}>{outcome.label}</Badge>
         </td>
-        <td className="py-3 px-4 hidden md:table-cell text-sm text-gray-600">{duration}</td>
-        <td className="py-3 px-4 text-sm text-gray-500 text-right whitespace-nowrap">
-          {formatDistanceToNow(new Date(call.started_at), { addSuffix: true })}
+        <td className="py-3 px-4 hidden md:table-cell text-sm text-gray-600">
+          {formatDuration(call.duration_seconds)}
         </td>
-        <td className="py-3 px-4 text-gray-400">
+        <td className="py-3 px-4 text-sm text-gray-500 text-right whitespace-nowrap">
+          {startedAt ? formatDistanceToNow(startedAt, { addSuffix: true }) : "—"}
+        </td>
+        <td className="py-3 px-4 text-gray-400" aria-hidden="true">
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </td>
       </tr>
@@ -73,14 +103,16 @@ function CallRow({ call }: { call: CallLog }) {
           <td colSpan={5} className="px-4 py-4">
             <div className="space-y-2 max-w-2xl">
               <div className="flex gap-4 text-xs text-gray-500">
-                <span>
-                  <span className="font-medium text-gray-700">Started: </span>
-                  {format(new Date(call.started_at), "MMM d, yyyy 'at' h:mm a")}
-                </span>
-                {call.ended_at && (
+                {startedAt && (
+                  <span>
+                    <span className="font-medium text-gray-700">Started: </span>
+                    {format(startedAt, "MMM d, yyyy 'at' h:mm a")}
+                  </span>
+                )}
+                {call.ended_at && safeDate(call.ended_at) && (
                   <span>
                     <span className="font-medium text-gray-700">Ended: </span>
-                    {format(new Date(call.ended_at), "h:mm a")}
+                    {format(safeDate(call.ended_at)!, "h:mm a")}
                   </span>
                 )}
               </div>
@@ -98,7 +130,9 @@ function CallRow({ call }: { call: CallLog }) {
   );
 }
 
-export function CallsTable({ calls }: CallsTableProps) {
+const MemoCallRow = memo(CallRow);
+
+function CallsTableComponent({ calls }: CallsTableProps) {
   if (calls.length === 0) {
     return (
       <Card>
@@ -107,12 +141,16 @@ export function CallsTable({ calls }: CallsTableProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4"
+              aria-hidden="true"
+            >
               <Phone className="h-8 w-8 text-gray-400" />
             </div>
             <p className="font-medium text-gray-700">No calls yet</p>
             <p className="mt-1 text-sm text-gray-400 max-w-xs">
-              Calls will appear here once your OmniDimension voice agent starts receiving inbound calls.
+              Calls will appear here once your OmniDimension voice agent starts receiving inbound
+              calls.
             </p>
           </div>
         </CardContent>
@@ -126,20 +164,20 @@ export function CallsTable({ calls }: CallsTableProps) {
         <CardTitle>Recent Calls</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" role="region" aria-label="Call logs">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <th className="py-3 px-4 text-left">Caller</th>
-                <th className="py-3 px-4 text-left hidden sm:table-cell">Outcome</th>
-                <th className="py-3 px-4 text-left hidden md:table-cell">Duration</th>
-                <th className="py-3 px-4 text-right">When</th>
-                <th className="py-3 px-4" />
+                <th className="py-3 px-4 text-left" scope="col">Caller</th>
+                <th className="py-3 px-4 text-left hidden sm:table-cell" scope="col">Outcome</th>
+                <th className="py-3 px-4 text-left hidden md:table-cell" scope="col">Duration</th>
+                <th className="py-3 px-4 text-right" scope="col">When</th>
+                <th className="py-3 px-4" scope="col" aria-label="Expand" />
               </tr>
             </thead>
             <tbody>
               {calls.map((call) => (
-                <CallRow key={call.id} call={call} />
+                <MemoCallRow key={call.id} call={call} />
               ))}
             </tbody>
           </table>
@@ -148,3 +186,5 @@ export function CallsTable({ calls }: CallsTableProps) {
     </Card>
   );
 }
+
+export const CallsTable = memo(CallsTableComponent);

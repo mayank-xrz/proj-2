@@ -1,6 +1,7 @@
 "use client";
 
-import { format, isPast, isToday } from "date-fns";
+import { memo, useMemo } from "react";
+import { format, isPast, isToday, isValid } from "date-fns";
 import type { Appointment, AppointmentStatus } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -22,22 +23,37 @@ const statusConfig: Record<
   no_show: { label: "No Show", variant: "danger" },
 };
 
-function AppointmentCard({ appt }: { appt: Appointment }) {
-  const dt = new Date(appt.appointment_dt);
+function safeDate(iso: string): Date | null {
+  const d = new Date(iso);
+  return isValid(d) ? d : null;
+}
+
+const AppointmentCard = memo(function AppointmentCard({ appt }: { appt: Appointment }) {
+  const dt = safeDate(appt.appointment_dt);
   const status = statusConfig[appt.status] ?? statusConfig.pending;
-  const past = isPast(dt) && !isToday(dt);
+  const past = dt ? isPast(dt) && !isToday(dt) : false;
 
   return (
-    <div
+    <article
       className={cn(
         "flex flex-col sm:flex-row gap-4 rounded-lg border border-gray-200 p-4 transition-colors",
         past && "opacity-60"
       )}
+      aria-label={`${appt.patient_name} — ${appt.service}`}
     >
       {/* Date block */}
-      <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-violet-50 text-violet-700">
-        <span className="text-xs font-medium uppercase">{format(dt, "MMM")}</span>
-        <span className="text-xl font-bold leading-none">{format(dt, "d")}</span>
+      <div
+        className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-violet-50 text-violet-700"
+        aria-hidden="true"
+      >
+        {dt ? (
+          <>
+            <span className="text-xs font-medium uppercase">{format(dt, "MMM")}</span>
+            <span className="text-xl font-bold leading-none">{format(dt, "d")}</span>
+          </>
+        ) : (
+          <span className="text-xs">—</span>
+        )}
       </div>
 
       {/* Details */}
@@ -50,17 +66,19 @@ function AppointmentCard({ appt }: { appt: Appointment }) {
         <p className="mt-0.5 text-sm font-medium text-violet-700">{appt.service}</p>
 
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+          {dt && (
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+              {format(dt, "h:mm a")} · {appt.duration_minutes} min
+            </span>
+          )}
           <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {format(dt, "h:mm a")} · {appt.duration_minutes} min
-          </span>
-          <span className="flex items-center gap-1">
-            <User className="h-3.5 w-3.5" />
+            <User className="h-3.5 w-3.5" aria-hidden="true" />
             {appt.patient_phone}
           </span>
           {appt.price_usd != null && (
             <span className="flex items-center gap-1">
-              <DollarSign className="h-3.5 w-3.5" />
+              <DollarSign className="h-3.5 w-3.5" aria-hidden="true" />
               {appt.price_usd.toFixed(2)}
             </span>
           )}
@@ -70,17 +88,21 @@ function AppointmentCard({ appt }: { appt: Appointment }) {
           <p className="mt-2 text-xs text-gray-400 italic">&ldquo;{appt.notes}&rdquo;</p>
         )}
       </div>
-    </div>
+    </article>
   );
-}
+});
 
-export function AppointmentsView({ appointments }: AppointmentsViewProps) {
-  const upcoming = appointments.filter(
-    (a) => a.status === "confirmed" || a.status === "pending"
-  );
-  const past = appointments.filter(
-    (a) => a.status === "completed" || a.status === "no_show" || a.status === "cancelled"
-  );
+function AppointmentsViewComponent({ appointments }: AppointmentsViewProps) {
+  const { upcoming, past } = useMemo(() => {
+    const upcoming = appointments.filter(
+      (a) => a.status === "confirmed" || a.status === "pending"
+    );
+    const past = appointments.filter(
+      (a) =>
+        a.status === "completed" || a.status === "no_show" || a.status === "cancelled"
+    );
+    return { upcoming, past };
+  }, [appointments]);
 
   if (appointments.length === 0) {
     return (
@@ -90,7 +112,10 @@ export function AppointmentsView({ appointments }: AppointmentsViewProps) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4"
+              aria-hidden="true"
+            >
               <Calendar className="h-8 w-8 text-gray-400" />
             </div>
             <p className="font-medium text-gray-700">No appointments yet</p>
@@ -133,3 +158,5 @@ export function AppointmentsView({ appointments }: AppointmentsViewProps) {
     </div>
   );
 }
+
+export const AppointmentsView = memo(AppointmentsViewComponent);

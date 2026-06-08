@@ -2,6 +2,8 @@
 
 import logging
 import sys
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +26,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
+# Lifespan (replaces deprecated @app.on_event)
+# ---------------------------------------------------------------------------
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    logger.info("Starting Voice Receptionist API — env=%s", settings.app_env)
+    await init_db()
+    logger.info("Database initialized")
+    yield
+    logger.info("Voice Receptionist API shutting down")
+
+
+# ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
 
@@ -39,6 +55,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # ---------------------------------------------------------------------------
@@ -52,24 +69,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ---------------------------------------------------------------------------
-# Startup / Shutdown
-# ---------------------------------------------------------------------------
-
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    """Initialize database tables on first boot."""
-    logger.info("Starting Voice Receptionist API — env=%s", settings.app_env)
-    await init_db()
-    logger.info("Database initialized")
-
-
-@app.on_event("shutdown")
-async def on_shutdown() -> None:
-    logger.info("Voice Receptionist API shutting down")
-
 
 # ---------------------------------------------------------------------------
 # Routers

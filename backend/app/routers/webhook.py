@@ -15,7 +15,7 @@ import hashlib
 import hmac
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
@@ -86,7 +86,7 @@ async def _process_event(event: OmniDimWebhookEvent, db: AsyncSession) -> None:
     """Upsert call log and optionally create an appointment from extracted vars."""
     outcome = _infer_outcome(event)
     ev = event.call_report.extracted_variables
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # ------------------------------------------------------------------ #
     # 1. Upsert call log

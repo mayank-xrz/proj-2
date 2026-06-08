@@ -1,7 +1,7 @@
 """Service layer for call log persistence and retrieval."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +23,7 @@ async def create_call_log(
     ended_at: datetime | None = None,
 ) -> CallLog:
     """Persist a new call log record."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     call = CallLog(
         id=str(uuid.uuid4()),
         omnidim_call_id=omnidim_call_id,

@@ -1,7 +1,7 @@
 """Pydantic schemas for appointment API endpoints."""
 
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 from app.models.appointment import AppointmentStatus
 
 

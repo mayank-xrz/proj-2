@@ -36,7 +36,7 @@ class OmniDimClient:
             custom_variables=custom_variables or {},
         )
         async with httpx.AsyncClient(base_url=self._base_url, timeout=15) as client:
-            resp = client.post(
+            resp = await client.post(
                 "/calls/dispatch",
                 headers=self._headers(),
                 json=payload.model_dump(),
@@ -47,6 +47,6 @@ class OmniDimClient:
     async def get_call_logs(self, call_id: str) -> dict:
         """Fetch call details from OmniDimension GET /calls/logs/{call_id}."""
         async with httpx.AsyncClient(base_url=self._base_url, timeout=15) as client:
-            resp = client.get(f"/calls/logs/{call_id}", headers=self._headers())
+            resp = await client.get(f"/calls/logs/{call_id}", headers=self._headers())
             resp.raise_for_status()
             return resp.json()

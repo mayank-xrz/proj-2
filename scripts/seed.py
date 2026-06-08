@@ -11,7 +11,7 @@ OmniDimension account or live phone calls.
 import asyncio
 import sys
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # Ensure the backend package is importable
@@ -69,7 +69,7 @@ async def seed() -> None:
     SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with SessionLocal() as db:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # ------------------------------------------------------------------
         # Seed call logs (last 14 days)

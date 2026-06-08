@@ -1,10 +1,13 @@
 """Router for call log read endpoints."""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.call import CallLog
 from app.schemas.call import CallLogRead, CallLogList
 from app.services.call_service import list_calls
 
@@ -28,10 +31,6 @@ async def get_call(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CallLogRead:
     """Fetch a single call log by ID."""
-    from sqlalchemy import select
-    from app.models.call import CallLog
-    from fastapi import HTTPException
-
     result = await db.execute(select(CallLog).where(CallLog.id == call_id))
     call = result.scalar_one_or_none()
     if not call:

@@ -18,7 +18,7 @@ Python SDK latest release: September 2024 — pip install omnidimension)
 from __future__ import annotations
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ class OmniDimWebhookEvent(BaseModel):
     # Raw pass-through for any extra fields OmniDimension adds in future versions
     extra: dict[str, Any] = Field(default_factory=dict)
 
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
 
 class DispatchCallRequest(BaseModel):

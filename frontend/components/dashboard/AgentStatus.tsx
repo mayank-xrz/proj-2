@@ -10,19 +10,27 @@ export function AgentStatus() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const check = async () => {
       try {
         const h = await api.health();
-        setHealth(h);
-        setError(false);
+        if (!cancelled) {
+          setHealth(h);
+          setError(false);
+        }
       } catch {
-        setError(true);
+        if (!cancelled) setError(true);
       }
     };
+
     check();
     const interval = setInterval(check, 30_000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []); // empty deps intentional: check() has no external dependencies
 
   const online = !error && health?.status === "ok";
 
@@ -32,6 +40,7 @@ export function AgentStatus() {
         className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
           online ? "bg-emerald-100" : "bg-gray-100"
         }`}
+        aria-hidden="true"
       >
         <Phone
           className={`h-6 w-6 ${online ? "text-emerald-600" : "text-gray-400"}`}
@@ -44,6 +53,8 @@ export function AgentStatus() {
             className={`inline-flex h-2 w-2 rounded-full ${
               online ? "bg-emerald-500 animate-pulse" : "bg-gray-300"
             }`}
+            role="status"
+            aria-label={online ? "Agent online" : "Agent offline"}
           />
           <span
             className={`text-sm font-medium ${
