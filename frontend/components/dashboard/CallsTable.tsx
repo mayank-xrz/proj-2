@@ -109,12 +109,15 @@ function CallRow({ call }: { call: CallLog }) {
                     {format(startedAt, "MMM d, yyyy 'at' h:mm a")}
                   </span>
                 )}
-                {call.ended_at && safeDate(call.ended_at) && (
-                  <span>
-                    <span className="font-medium text-gray-700">Ended: </span>
-                    {format(safeDate(call.ended_at)!, "h:mm a")}
-                  </span>
-                )}
+                {(() => {
+                  const endedAt = call.ended_at ? safeDate(call.ended_at) : null;
+                  return endedAt ? (
+                    <span>
+                      <span className="font-medium text-gray-700">Ended: </span>
+                      {format(endedAt, "h:mm a")}
+                    </span>
+                  ) : null;
+                })()}
               </div>
               {call.summary && (
                 <div>

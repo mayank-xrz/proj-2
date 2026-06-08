@@ -136,22 +136,16 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <div
-              id="panel-calls"
-              role="tabpanel"
-              aria-labelledby="tab-calls"
-              hidden={activeTab !== "calls"}
-            >
-              <CallsTable calls={calls} />
-            </div>
-            <div
-              id="panel-appointments"
-              role="tabpanel"
-              aria-labelledby="tab-appointments"
-              hidden={activeTab !== "appointments"}
-            >
-              <AppointmentsView appointments={appointments} />
-            </div>
+            {activeTab === "calls" && (
+              <div id="panel-calls" role="tabpanel" aria-labelledby="tab-calls">
+                <CallsTable calls={calls} />
+              </div>
+            )}
+            {activeTab === "appointments" && (
+              <div id="panel-appointments" role="tabpanel" aria-labelledby="tab-appointments">
+                <AppointmentsView appointments={appointments} />
+              </div>
+            )}
           </>
         )}
 
