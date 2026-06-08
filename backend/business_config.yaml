@@ -1,0 +1,60 @@
+## Business configuration for Voice Receptionist
+## Customize this file for each deployment
+
+business:
+  name: "Sunrise Dental Clinic"
+  phone: "+1-555-0100"
+  email: "hello@sunrisedental.example.com"
+  address: "123 Main Street, Springfield, IL 62701"
+  timezone: "America/Chicago"
+
+hours:
+  monday: "09:00-17:00"
+  tuesday: "09:00-17:00"
+  wednesday: "09:00-17:00"
+  thursday: "09:00-17:00"
+  friday: "09:00-16:00"
+  saturday: "10:00-14:00"
+  sunday: "closed"
+
+services:
+  - name: "Routine Cleaning"
+    duration_minutes: 45
+    price_usd: 120
+  - name: "Dental Exam"
+    duration_minutes: 30
+    price_usd: 80
+  - name: "Teeth Whitening"
+    duration_minutes: 60
+    price_usd: 299
+  - name: "Emergency Visit"
+    duration_minutes: 30
+    price_usd: 150
+  - name: "X-Ray"
+    duration_minutes: 20
+    price_usd: 75
+
+faqs:
+  - question: "Do you accept insurance?"
+    answer: "Yes, we accept most major insurance plans including Delta Dental, Cigna, Aetna, and BlueCross BlueShield. Please call us to verify your specific plan."
+
+  - question: "How do I cancel or reschedule?"
+    answer: "Please give us at least 24 hours notice to cancel or reschedule. You can call us at our main number or reply to your appointment confirmation email."
+
+  - question: "Is parking available?"
+    answer: "Yes, we have free parking directly in front of the clinic and an additional lot behind the building."
+
+  - question: "Do you treat children?"
+    answer: "Absolutely! We see patients of all ages. We recommend bringing children in for their first visit around age 2-3."
+
+  - question: "What should I bring to my first appointment?"
+    answer: "Please bring a valid photo ID, your insurance card, and any previous dental records if available. Arrive 10 minutes early to complete new patient forms."
+
+  - question: "Do you offer payment plans?"
+    answer: "Yes, we offer flexible payment plans through CareCredit for treatments over $500. Our front desk can provide details."
+
+  - question: "What are your emergency hours?"
+    answer: "For dental emergencies outside of regular hours, please call our main number and follow the prompts. A doctor is on call for urgent situations."
+
+  - question: "How often should I get a cleaning?"
+    answer: "We recommend a professional cleaning every 6 months for most patients. Your dentist may suggest more frequent visits based on your individual needs."
